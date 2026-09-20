@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Binary Pixel Art</title>
+
+<style>
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  margin: 0;
+  padding: 30px;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.canvas-controls {
+  background: white;
+  display: inline-block;
+  padding: 18px 25px;
+  margin-bottom: 25px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.control-row {
+  margin: 8px 0;
+}
+
+.canvas-controls input {
+  padding: 7px;
+  margin: 0 8px;
+  font-size: 16px;
+}
+
+#projectName {
+  width: 220px;
+}
+
+.number-input {
+  width: 65px;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.panel {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  max-width: 90vw;
+  overflow: auto;
+}
+
+#artTitle {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+#dimensions {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+#grid {
+  display: grid;
+  gap: 1px;
+  background-color: #777;
+  border: 3px solid #333;
+  width: fit-content;
+  margin: auto;
+
+  /* Prevents dragging from selecting page content */
+  user-select: none;
+}
+
+.pixel {
+  background-color: white;
+  cursor: crosshair;
+  box-sizing: border-box;
+}
+
+.pixel.on {
+  background-color: black;
+}
+
+textarea {
+  width: 340px;
+  height: 300px;
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 15px;
+  resize: both;
+  white-space: pre;
+}
+
+button,
+.file-label {
+  display: inline-block;
+  margin: 8px;
+  padding: 10px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background-color: #2563eb;
+  color: white;
+}
+
+button:hover,
+.file-label:hover {
+  background-color: #1d4ed8;
+}
+
+.clear-button {
+  background-color: #666;
+}
+
+.clear-button:hover {
+  background-color: #444;
+}
+
+.save-button {
+  background-color: #167c36;
+}
+
+.save-button:hover {
+  background-color: #11632b;
+}
+
+.download-button {
+  background-color: #7c3aed;
+}
+
+.download-button:hover {
+  background-color: #652bc4;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.info {
+  margin-top: 25px;
+  background-color: #e9eef5;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 750px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.legend {
+  margin-top: 15px;
+  font-size: 18px;
+}
+
+.binary-number {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+#message {
+  min-height: 20px;
+  color: #167c36;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.project-section {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid #ccc;
+}
+
+.project-section h3 {
+  margin-bottom: 8px;
+}
+
+.small-note {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.draw-note {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Binary Pixel Art</h1>
+
+<div class="subtitle">
+Create an image using pixels and see how the computer represents it using binary.
+</div>
+
+
+<!-- PROJECT CONTROLS -->
+
+<div class="canvas-controls">
+
+  <div class="control-row">
+
+    <strong>Project Name:</strong>
+
+    <input
+      type="text"
+      id="projectName"
+      placeholder="My Pixel Art"
+      maxlength="50"
+      oninput="updateProjectTitle()"
+    >
+
+  </div>
+
+  <div class="control-row">
+
+    <strong>Canvas Size:</strong>
+
+    Width:
+
+    <input
+      type="number"
+      id="widthInput"
+      class="number-input"
+      value="8"
+      min="1"
+      max="40"
+    >
+
+    Height:
+
+    <input
+      type="number"
+      id="heightInput"
+      class="number-input"
+      value="8"
+      min="1"
+      max="40"
+    >
+
+    <button onclick="createCanvas()">
+      Create Canvas
+    </button>
+
+  </div>
+
+</div>
+
+
+<div class="container">
+
+
+<!-- IMAGE PANEL -->
+
+<div class="panel">
+
+  <h2>Pixel Image</h2>
+
+  <div id="artTitle">Untitled Project</div>
+
+  <div id="dimensions"></div>
+
+  <div id="grid"></div>
+
+  <div class="legend">
+
+    White =
+    <span class="binary-number">0</span>
+
+    &nbsp;&nbsp;&nbsp;
+
+    Black =
+    <span class="binary-number">1</span>
+
+  </div>
+
+  <div class="draw-note">
+    Click a pixel or hold the mouse button and drag to draw.
+  </div>
+
+  <br>
+
+  <button
+    class="clear-button"
+    onclick="clearGrid()"
+  >
+    Clear Image
+  </button>
+
+
+  <div class="project-section">
+
+    <h3>Save Your Work</h3>
+
+    <button
+      class="save-button"
+      onclick="saveProject()"
+    >
+      Save Project
+    </button>
+
+
+    <label class="file-label">
+
+      Open Project
+
+      <input
+        type="file"
+        id="projectFile"
+        accept=".json"
+        onchange="openProject(event)"
+      >
+
+    </label>
+
+    <br>
+
+    <button
+      class="download-button"
+      onclick="downloadImage()"
+    >
+      Download Image
+    </button>
+
+
+    <div class="small-note">
+
+      <strong>Save Project</strong>
+      creates an editable project file.
+
+      <br>
+
+      <strong>Download Image</strong>
+      creates a PNG picture.
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- BINARY PANEL -->
+
+<div class="panel">
+
+  <h2>Binary Code</h2>
+
+  <textarea
+    id="binaryInput"
+    spellcheck="false"
+  ></textarea>
+
+  <br>
+
+  <button onclick="renderBinary()">
+    Render Image
+  </button>
+
+  <button onclick="copyBinary()">
+    Copy Binary
+  </button>
+
+  <div id="message"></div>
+
+</div>
+
+</div>
+
+
+<!-- STORAGE INFORMATION -->
+
+<div class="info">
+
+  <strong>How is the image stored?</strong>
+
+  <p>
+    Every pixel is represented by
+    <strong>one bit</strong>.
+  </p>
+
+  <p>
+
+    <span class="binary-number">0</span>
+    = White Pixel
+
+    &nbsp;&nbsp;&nbsp;
+
+    <span class="binary-number">1</span>
+    = Black Pixel
+
+  </p>
+
+  <p id="storageInfo"></p>
+
+  <p class="small-note">
+    The project name, width, and height are
+    <strong>metadata</strong> — information that
+    describes the image rather than the image's
+    actual pixel data.
+  </p>
+
+</div>
+
+
+<script>
+
+let width = 8;
+let height = 8;
+
+let pixels = [];
+
+let mouseDown = false;
+let drawValue = "1";
+
+const grid =
+  document.getElementById("grid");
+
+const binaryInput =
+  document.getElementById("binaryInput");
+
+
+// ------------------------------------
+// PROJECT TITLE
+// ------------------------------------
+
+function updateProjectTitle() {
+
+  const name =
+    document
+      .getElementById("projectName")
+      .value
+      .trim();
+
+  document.getElementById(
+    "artTitle"
+  ).textContent =
+    name || "Untitled Project";
+
+}
+
+
+// ------------------------------------
+// CREATE CANVAS
+// ------------------------------------
+
+function createCanvas() {
+
+  width =
+    parseInt(
+      document
+        .getElementById("widthInput")
+        .value
+    );
+
+  height =
+    parseInt(
+      document
+        .getElementById("heightInput")
+        .value
+    );
+
+
+  if (
+    isNaN(width) ||
+    isNaN(height) ||
+    width < 1 ||
+    height < 1
+  ) {
+
+    alert(
+      "Please enter a valid width and height."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    width > 40 ||
+    height > 40
+  ) {
+
+    alert(
+      "Please use dimensions of 40 pixels or less."
+    );
+
+    return;
+
+  }
+
+
+  buildGrid();
+
+}
+
+
+// ------------------------------------
+// BUILD GRID
+// ------------------------------------
+
+function buildGrid() {
+
+  grid.innerHTML = "";
+
+  pixels = [];
+
+
+  let pixelSize = 35;
+
+
+  if (
+    width > 15 ||
+    height > 15
+  ) {
+
+    pixelSize = 25;
+
+  }
+
+
+  if (
+    width > 25 ||
+    height > 25
+  ) {
+
+    pixelSize = 18;
+
+  }
+
+
+  grid.style.gridTemplateColumns =
+    `repeat(${width}, ${pixelSize}px)`;
+
+
+  for (
+    let i = 0;
+    i < width * height;
+    i++
+  ) {
+
+    const pixel =
+      document.createElement("div");
+
+
+    pixel.classList.add("pixel");
+
+    pixel.style.width =
+      pixelSize + "px";
+
+    pixel.style.height =
+      pixelSize + "px";
+
+    pixel.dataset.value = "0";
+
+
+    // CLICK / START DRAWING
+
+    pixel.addEventListener(
+      "mousedown",
+      function(event) {
+
+        event.preventDefault();
+
+        mouseDown = true;
+
+
+        /*
+        Decide whether this drag
+        is drawing or erasing.
+
+        Starting on white = draw black.
+        Starting on black = erase.
+        */
+
+        if (
+          pixel.dataset.value === "0"
+        ) {
+
+          drawValue = "1";
+
+        } else {
+
+          drawValue = "0";
+
+        }
+
+
+        setPixel(
+          pixel,
+          drawValue
+        );
+
+      }
+    );
+
+
+    // DRAG OVER PIXELS
+
+    pixel.addEventListener(
+      "mouseenter",
+      function() {
+
+        if (mouseDown) {
+
+          setPixel(
+            pixel,
+            drawValue
+          );
+
+        }
+
+      }
+    );
+
+
+    grid.appendChild(pixel);
+
+    pixels.push(pixel);
+
+  }
+
+
+  document
+    .getElementById("dimensions")
+    .textContent =
+      width +
+      " × " +
+      height +
+      " pixels";
+
+
+  document
+    .getElementById("widthInput")
+    .value = width;
+
+
+  document
+    .getElementById("heightInput")
+    .value = height;
+
+
+  updateBinary();
+
+  updateStorageInfo();
+
+  updateProjectTitle();
+
+}
+
+
+// ------------------------------------
+// STOP DRAWING
+// ------------------------------------
+
+document.addEventListener(
+  "mouseup",
+  function() {
+
+    mouseDown = false;
+
+  }
+);
+
+
+// ------------------------------------
+// SET PIXEL
+// ------------------------------------
+
+function setPixel(
+  pixel,
+  value
+) {
+
+  pixel.dataset.value =
+    value;
+
+
+  if (value === "1") {
+
+    pixel.classList.add("on");
+
+  } else {
+
+    pixel.classList.remove("on");
+
+  }
+
+
+  updateBinary();
+
+}
+
+
+// ------------------------------------
+// UPDATE BINARY
+// ------------------------------------
+
+function updateBinary() {
+
+  let output = "";
+
+
+  for (
+    let row = 0;
+    row < height;
+    row++
+  ) {
+
+    for (
+      let column = 0;
+      column < width;
+      column++
+    ) {
+
+      const index =
+        row * width + column;
+
+
+      output +=
+        pixels[index]
+          .dataset.value;
+
+    }
+
+
+    if (
+      row < height - 1
+    ) {
+
+      output += "\n";
+
+    }
+
+  }
+
+
+  binaryInput.value =
+    output;
+
+}
+
+
+// ------------------------------------
+// RENDER BINARY
+// ------------------------------------
+
+function renderBinary() {
+
+  let binary =
+    binaryInput
+      .value
+      .replace(/\s/g, "");
+
+
+  if (
+    !/^[01]+$/.test(binary)
+  ) {
+
+    alert(
+      "Binary can contain only 0s and 1s."
+    );
+
+    return;
+
+  }
+
+
+  const requiredBits =
+    width * height;
+
+
+  if (
+    binary.length !== requiredBits
+  ) {
+
+    alert(
+
+      "Your " +
+      width +
+      " × " +
+      height +
+      " image requires exactly " +
+      requiredBits +
+      " bits.\n\n" +
+
+      "You currently have " +
+      binary.length +
+      " bits."
+
+    );
+
+    return;
+
+  }
+
+
+  loadBinaryIntoGrid(
+    binary
+  );
+
+}
+
+
+// ------------------------------------
+// LOAD BINARY
+// ------------------------------------
+
+function loadBinaryIntoGrid(
+  binary
+) {
+
+  for (
+    let i = 0;
+    i < binary.length;
+    i++
+  ) {
+
+    pixels[i].dataset.value =
+      binary[i];
+
+
+    if (
+      binary[i] === "1"
+    ) {
+
+      pixels[i]
+        .classList
+        .add("on");
+
+    } else {
+
+      pixels[i]
+        .classList
+        .remove("on");
+
+    }
+
+  }
+
+
+  updateBinary();
+
+}
+
+
+// ------------------------------------
+// CLEAR
+// ------------------------------------
+
+function clearGrid() {
+
+  pixels.forEach(
+    pixel => {
+
+      pixel.dataset.value = "0";
+
+      pixel
+        .classList
+        .remove("on");
+
+    }
+  );
+
+
+  updateBinary();
+
+}
+
+
+// ------------------------------------
+// COPY BINARY
+// ------------------------------------
+
+function copyBinary() {
+
+  navigator.clipboard.writeText(
+    binaryInput.value
+  );
+
+
+  showMessage(
+    "Binary copied!"
+  );
+
+}
+
+
+// ------------------------------------
+// CLEAN FILENAME
+// ------------------------------------
+
+function getFileName() {
+
+  let name =
+    document
+      .getElementById("projectName")
+      .value
+      .trim();
+
+
+  if (!name) {
+
+    name =
+      "binary-pixel-art";
+
+  }
+
+
+  /*
+  Replace characters that may
+  cause filename problems.
+  */
+
+  name =
+    name.replace(
+      /[^a-z0-9-_ ]/gi,
+      ""
+    );
+
+
+  name =
+    name.replace(
+      /\s+/g,
+      "-"
+    );
+
+
+  return (
+    name ||
+    "binary-pixel-art"
+  );
+
+}
+
+
+// ------------------------------------
+// SAVE PROJECT
+// ------------------------------------
+
+function saveProject() {
+
+  const projectName =
+    document
+      .getElementById("projectName")
+      .value
+      .trim();
+
+
+  const binary =
+    binaryInput
+      .value
+      .replace(/\s/g, "");
+
+
+  const project = {
+
+    type:
+      "BinaryPixelArt",
+
+    version:
+      2,
+
+    name:
+      projectName,
+
+    width:
+      width,
+
+    height:
+      height,
+
+    binary:
+      binary
+
+  };
+
+
+  const json =
+    JSON.stringify(
+      project,
+      null,
+      2
+    );
+
+
+  const blob =
+    new Blob(
+      [json],
+      {
+        type:
+          "application/json"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const link =
+    document.createElement("a");
+
+
+  link.href =
+    url;
+
+
+  link.download =
+    getFileName() +
+    ".json";
+
+
+  document.body
+    .appendChild(link);
+
+
+  link.click();
+
+
+  document.body
+    .removeChild(link);
+
+
+  URL.revokeObjectURL(
+    url
+  );
+
+
+  showMessage(
+    "Project saved!"
+  );
+
+}
+
+
+// ------------------------------------
+// OPEN PROJECT
+// ------------------------------------
+
+function openProject(event) {
+
+  const file =
+    event.target.files[0];
+
+
+  if (!file) {
+
+    return;
+
+  }
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(e) {
+
+      try {
+
+        const project =
+          JSON.parse(
+            e.target.result
+          );
+
+
+        if (
+          project.type !==
+          "BinaryPixelArt"
+        ) {
+
+          throw new Error(
+            "Not a Binary Pixel Art project."
+          );
+
+        }
+
+
+        if (
+          !project.width ||
+          !project.height ||
+          !project.binary
+        ) {
+
+          throw new Error(
+            "Project data is incomplete."
+          );
+
+        }
+
+
+        if (
+          project.width > 40 ||
+          project.height > 40
+        ) {
+
+          throw new Error(
+            "Project canvas is too large."
+          );
+
+        }
+
+
+        const expectedBits =
+          project.width *
+          project.height;
+
+
+        if (
+          project.binary.length !==
+          expectedBits
+        ) {
+
+          throw new Error(
+            "Binary data does not match canvas size."
+          );
+
+        }
+
+
+        if (
+          !/^[01]+$/.test(
+            project.binary
+          )
+        ) {
+
+          throw new Error(
+            "Project contains invalid binary data."
+          );
+
+        }
+
+
+        width =
+          project.width;
+
+        height =
+          project.height;
+
+
+        /*
+        Older project files may
+        not contain a name.
+        */
+
+        document
+          .getElementById(
+            "projectName"
+          )
+          .value =
+            project.name || "";
+
+
+        buildGrid();
+
+
+        loadBinaryIntoGrid(
+          project.binary
+        );
+
+
+        updateProjectTitle();
+
+
+        showMessage(
+          "Project opened!"
+        );
+
+
+      } catch (error) {
+
+        alert(
+          "This file could not be opened.\n\n" +
+          error.message
+        );
+
+      }
+
+    };
+
+
+  reader.readAsText(
+    file
+  );
+
+
+  event.target.value = "";
+
+}
+
+
+// ------------------------------------
+// DOWNLOAD PNG
+// ------------------------------------
+
+function downloadImage() {
+
+  const scale = 25;
+
+
+  const canvas =
+    document.createElement(
+      "canvas"
+    );
+
+
+  canvas.width =
+    width * scale;
+
+  canvas.height =
+    height * scale;
+
+
+  const ctx =
+    canvas.getContext("2d");
+
+
+  // WHITE BACKGROUND
+
+  ctx.fillStyle =
+    "white";
+
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  // DRAW BLACK PIXELS
+
+  for (
+    let row = 0;
+    row < height;
+    row++
+  ) {
+
+    for (
+      let column = 0;
+      column < width;
+      column++
+    ) {
+
+      const index =
+        row * width + column;
+
+
+      if (
+        pixels[index]
+          .dataset.value === "1"
+      ) {
+
+        ctx.fillStyle =
+          "black";
+
+
+        ctx.fillRect(
+
+          column * scale,
+
+          row * scale,
+
+          scale,
+
+          scale
+
+        );
+
+      }
+
+    }
+
+  }
+
+
+  const link =
+    document.createElement("a");
+
+
+  link.download =
+    getFileName() +
+    ".png";
+
+
+  link.href =
+    canvas.toDataURL(
+      "image/png"
+    );
+
+
+  link.click();
+
+
+  showMessage(
+    "PNG image downloaded!"
+  );
+
+}
+
+
+// ------------------------------------
+// STORAGE INFO
+// ------------------------------------
+
+function updateStorageInfo() {
+
+  const totalPixels =
+    width * height;
+
+
+  const totalBits =
+    totalPixels;
+
+
+  const totalBytes =
+    totalBits / 8;
+
+
+  let byteDisplay;
+
+
+  if (
+    Number.isInteger(
+      totalBytes
+    )
+  ) {
+
+    byteDisplay =
+      totalBytes;
+
+  } else {
+
+    byteDisplay =
+      totalBytes.toFixed(2);
+
+  }
+
+
+  document
+    .getElementById(
+      "storageInfo"
+    )
+    .innerHTML =
+
+      width +
+      " × " +
+      height +
+
+      " = <strong>" +
+      totalPixels +
+      " pixels</strong><br><br>" +
+
+      totalPixels +
+      " pixels × 1 bit per pixel = " +
+
+      "<strong>" +
+      totalBits +
+      " bits</strong><br><br>" +
+
+      totalBits +
+      " bits ÷ 8 = " +
+
+      "<strong>" +
+      byteDisplay +
+      " bytes</strong>";
+
+}
+
+
+// ------------------------------------
+// MESSAGE
+// ------------------------------------
+
+function showMessage(text) {
+
+  const message =
+    document
+      .getElementById(
+        "message"
+      );
+
+
+  message.textContent =
+    text;
+
+
+  setTimeout(
+    function() {
+
+      message.textContent = "";
+
+    },
+    2000
+  );
+
+}
+
+
+// ------------------------------------
+// START
+// ------------------------------------
+
+buildGrid();
+
+</script>
+
+</body>
+</html>
